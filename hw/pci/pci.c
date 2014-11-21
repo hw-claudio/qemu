@@ -1027,6 +1027,8 @@ static pcibus_t pci_bar_address(PCIDevice *d,
 
     if (type & PCI_BASE_ADDRESS_SPACE_IO) {
         if (!(cmd & PCI_COMMAND_IO)) {
+            PCI_DPRINTF("%s: I/O space not enabled, ignoring request.\n",
+                        __func__);
             return PCI_BAR_UNMAPPED;
         }
         new_addr = pci_get_long(d->config + bar) & ~(size - 1);
@@ -1034,13 +1036,25 @@ static pcibus_t pci_bar_address(PCIDevice *d,
         /* Check if 32 bit BAR wraps around explicitly.
          * TODO: make priorities correct and remove this work around.
          */
-        if (last_addr <= new_addr || new_addr == 0 || last_addr >= UINT32_MAX) {
+        if (last_addr <= new_addr || last_addr >= UINT32_MAX) {
+            PCI_DPRINTF("%s: 32bit I/O address would wrap around, ignoring request.\n",
+                        __func__);
+            return PCI_BAR_UNMAPPED;
+        }
+        /* NB: the refusal to accept new_addr == 0 is not mandated by PCI,
+         * but this check is there for legacy reasons for some platforms.
+         */
+        if (new_addr == 0) {
+            PCI_DPRINTF("%s: I/O address is zero, ignoring request.\n",
+                        __func__);
             return PCI_BAR_UNMAPPED;
         }
         return new_addr;
     }
 
     if (!(cmd & PCI_COMMAND_MEMORY)) {
+        PCI_DPRINTF("%s: memory space not enabled, ignoring request.\n",
+                    __func__);
         return PCI_BAR_UNMAPPED;
     }
     if (type & PCI_BASE_ADDRESS_MEM_TYPE_64) {
@@ -1050,28 +1064,32 @@ static pcibus_t pci_bar_address(PCIDevice *d,
     }
     /* the ROM slot has a specific enable bit */
     if (reg == PCI_ROM_SLOT && !(new_addr & PCI_ROM_ADDRESS_ENABLE)) {
+        PCI_DPRINTF("%s: ROM slot not enabled, ignoring request.\n",
+                    __func__);
         return PCI_BAR_UNMAPPED;
     }
     new_addr &= ~(size - 1);
     last_addr = new_addr + size - 1;
     /* NOTE: we do not support wrapping */
-    /* XXX: as we cannot support really dynamic
-       mappings, we handle specific values as invalid
-       mappings. */
-    if (last_addr <= new_addr || new_addr == 0 ||
-        last_addr == PCI_BAR_UNMAPPED) {
-        return PCI_BAR_UNMAPPED;
-    }
-
     /* Now pcibus_t is 64bit.
      * Check if 32 bit BAR wraps around explicitly.
      * Without this, PC ide doesn't work well.
      * TODO: remove this work around.
      */
-    if  (!(type & PCI_BASE_ADDRESS_MEM_TYPE_64) && last_addr >= UINT32_MAX) {
+    /* XXX: as we cannot support really dynamic
+       mappings, we handle specific values as invalid
+       mappings. */
+    if (last_addr <= new_addr || last_addr == PCI_BAR_UNMAPPED ||
+        (!(type & PCI_BASE_ADDRESS_MEM_TYPE_64) && last_addr >= UINT32_MAX)) {
+        PCI_DPRINTF("%s: memory address would wrap around, ignoring request.\n",
+                    __func__);
         return PCI_BAR_UNMAPPED;
     }
-
+    if (new_addr == 0) {
+        PCI_DPRINTF("%s: memory address is zero, ignoring request.\n",
+                    __func__);
+        return PCI_BAR_UNMAPPED;
+    }
     /*
      * OS is allowed to set BAR beyond its addressable
      * bits. For example, 32 bit OS can set 64bit bar
@@ -1079,6 +1097,8 @@ static pcibus_t pci_bar_address(PCIDevice *d,
      * it in the future for e.g. PAE.
      */
     if (last_addr >= HWADDR_MAX) {
+        PCI_DPRINTF("%s: bar address beyond max addressable, ignoring request.\n",
+                    __func__);
         return PCI_BAR_UNMAPPED;
     }
 
