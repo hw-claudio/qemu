@@ -44,6 +44,7 @@
 #include "qemu/error-report.h"
 
 #define NUM_VIRTIO_TRANSPORTS 32
+#define NUM_PCI_IRQS 4
 
 /* Number of external interrupt lines to configure the GIC with */
 #define NUM_IRQS 128
@@ -68,8 +69,12 @@ enum {
     VIRT_UART,
     VIRT_MMIO,
     VIRT_RTC,
+    VIRT_PCI_CFG,
+    VIRT_PCI_IO,
+    VIRT_PCI_MEM,
     VIRT_FW_CFG,
 };
+#define VIRT_PCI VIRT_PCI_CFG
 
 typedef struct MemMapEntry {
     hwaddr base;
@@ -129,13 +134,17 @@ static const MemMapEntry a15memmap[] = {
     [VIRT_FW_CFG] =     { 0x09020000, 0x0000000a },
     [VIRT_MMIO] =       { 0x0a000000, 0x00000200 },
     /* ...repeating for a total of NUM_VIRTIO_TRANSPORTS, each of that size */
-    /* 0x10000000 .. 0x40000000 reserved for PCI */
+    /* PCI regions */
+    [VIRT_PCI_CFG] =    { 0x10000000, 0x01000000 },
+    [VIRT_PCI_IO] =     { 0x11000000, 0x00010000 },
+    [VIRT_PCI_MEM] =    { 0x12000000, 0x2e000000 },
     [VIRT_MEM] =        { 0x40000000, 30ULL * 1024 * 1024 * 1024 },
 };
 
 static const int a15irqmap[] = {
     [VIRT_UART] = 1,
     [VIRT_RTC] = 2,
+    [VIRT_PCI] = 3, /* ...to 3 + NUM_PCI_IRQS - 1 */
     [VIRT_MMIO] = 16, /* ...to 16 + NUM_VIRTIO_TRANSPORTS - 1 */
 };
 
@@ -436,6 +445,105 @@ static void create_rtc(const VirtBoardInfo *vbi, qemu_irq *pic)
     g_free(nodename);
 }
 
+static void create_pci_host(const VirtBoardInfo *vbi, qemu_irq *pic)
+{
+    DeviceState *dev;
+    SysBusDevice *busdev;
+    int i, j, intmap_rows;
+    const MemMapEntry *mme = vbi->memmap;
+    uint32_t plat_acells;
+    uint32_t plat_scells;
+    uint32_t gic_phandle;
+    char *nodename;
+
+    dev = qdev_create(NULL, "generic_pci");
+    qdev_prop_set_uint64(dev, "mmio_win_size", mme[VIRT_PCI_MEM].size);
+    qdev_prop_set_uint64(dev, "mmio_win_addr", mme[VIRT_PCI_MEM].base);
+    qdev_prop_set_uint32(dev, "irqs", NUM_PCI_IRQS);
+    qdev_init_nofail(dev);
+
+    busdev = SYS_BUS_DEVICE(dev);
+    sysbus_mmio_map(busdev, 0, mme[VIRT_PCI_CFG].base); /* PCI config */
+    sysbus_mmio_map(busdev, 1, mme[VIRT_PCI_IO].base);  /* PCI I/O */
+    sysbus_mmio_map(busdev, 2, mme[VIRT_PCI_MEM].base); /* PCI memory window */
+
+    for ( i = 0; i < NUM_PCI_IRQS; i++) {
+        sysbus_connect_irq(busdev, i, pic[vbi->irqmap[VIRT_PCI] + i]);
+    }
+
+    /* add device tree node */
+    nodename = g_strdup_printf("/pci@%" PRIx64, mme[VIRT_PCI_CFG].base);
+    qemu_fdt_add_subnode(vbi->fdt, nodename);
+    qemu_fdt_setprop_string(vbi->fdt, nodename, "compatible",
+                                     "pci-host-cam-generic");
+    qemu_fdt_setprop_string(vbi->fdt, nodename, "device_type", "pci");
+    qemu_fdt_setprop_cell(vbi->fdt, nodename, "#address-cells", 0x3);
+    qemu_fdt_setprop_cell(vbi->fdt, nodename, "#size-cells", 0x2);
+    qemu_fdt_setprop_cell(vbi->fdt, nodename, "#interrupt-cells", 0x1);
+
+    plat_acells = qemu_fdt_getprop_cell(vbi->fdt, "/", "#address-cells");
+    plat_scells = qemu_fdt_getprop_cell(vbi->fdt, "/", "#size-cells");
+    qemu_fdt_setprop_sized_cells(vbi->fdt, nodename, "reg",
+                                    plat_acells, mme[VIRT_PCI_CFG].base,
+                                    plat_scells, mme[VIRT_PCI_CFG].size);
+
+    /* Two regions (second and third of *busdev):
+       - I/O region, PCI addr = 0x0, CPU addr = mme[VIRT_PCI_IO].base,
+         size = mme[VIRT_PCI_IO].size,
+       - 32bit MMIO region, PCI addr = CPU addr = mme[VIRT_PCI_MEM].base,
+         size = mme[VIRT_PCI_MEM].size */
+    qemu_fdt_setprop_sized_cells(vbi->fdt, nodename, "ranges",
+            1, 0x01000000, 2, 0x00000000, /* I/O space */
+            2, mme[VIRT_PCI_IO].base, 2, mme[VIRT_PCI_IO].size,
+            1, 0x02000000, 2, mme[VIRT_PCI_MEM].base, /* 32bit memory space */
+            2, mme[VIRT_PCI_MEM].base, 2, mme[VIRT_PCI_MEM].size);
+
+    gic_phandle = qemu_fdt_get_phandle(vbi->fdt, "/intc");
+
+#define IRQ_MAP_ENTRY_DESC_SZ 14
+#define PHYSH_DEV_SHIFT 11
+    /* Any interrupt from the PCI bus is represented by four 32bit values <physH
+       physM physL pin#> (unit-interrupt-specifier), where bits physH[11:15]
+       identify the device number and pin# the pin number that triggered. We use
+       the two bits physH[14:15] and pin# to route all the PCI interrupts to
+       four different system interrupts. The following mask is used to honour
+       exactly those bits. */
+    qemu_fdt_setprop_sized_cells(vbi->fdt, nodename, "interrupt-map-mask",
+                    1, 0x3 << PHYSH_DEV_SHIFT, 1, 0x0, 1, 0x0, 1, 0x7);
+
+    /* interrupt-map property
+       Two bits of physH[14:15] and four possible values of pin# give a maximum
+       of 16 different results of the mask operation:
+       <physH physM physL pin#> AND <interrupt-map-mask>
+       Cycling through the four system interrupts available, we assign to each
+       result an interrupt number (basically, 32 * 4 maximum PCI interrupts are
+       mapped to 4 system interrupts).
+       Each entry inside interrupt-map has the following form:
+       <PCI unit-interrupt-specifier, system unit-interrupt-specifier> */
+    intmap_rows = 16;
+    uint64_t *int_mapping_data = g_malloc0(IRQ_MAP_ENTRY_DESC_SZ *
+                                  sizeof(uint64_t) * intmap_rows);
+    uint64_t *int_map_data = int_mapping_data;
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) {
+           uint64_t physh_dev_nr = i << PHYSH_DEV_SHIFT;
+           uint64_t pci_pin_nr = j + 1;
+           uint64_t row[IRQ_MAP_ENTRY_DESC_SZ] =
+           {1, physh_dev_nr, 2, 0x0, 1, pci_pin_nr, // masked PCI interrupt...
+            1, gic_phandle, 1, GIC_FDT_IRQ_TYPE_SPI, // ...mapped to this IRQ
+            1, (vbi->irqmap[VIRT_PCI_CFG] + (j + i) % 4),
+            1, GIC_FDT_IRQ_FLAGS_LEVEL_HI};
+           int_map_data = mempcpy(int_map_data, row, sizeof(row));
+        }
+    }
+
+    qemu_fdt_setprop_sized_cells_from_array(vbi->fdt, nodename, "interrupt-map",
+                     (intmap_rows * IRQ_MAP_ENTRY_DESC_SZ)/2, int_mapping_data);
+
+    g_free(int_mapping_data);
+    g_free(nodename);
+}
+
 static void create_virtio_devices(const VirtBoardInfo *vbi, qemu_irq *pic)
 {
     int i;
@@ -639,6 +747,8 @@ static void machvirt_init(MachineState *machine)
     create_uart(vbi, pic);
 
     create_rtc(vbi, pic);
+
+    create_pci_host(vbi, pic);
 
     /* Create mmio transports, so the user can create virtio backends
      * (which will be automatically plugged in to the transports). If
