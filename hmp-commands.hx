@@ -429,6 +429,34 @@ Start gdbserver session (default @var{port}=1234)
 ETEXI
 
     {
+        .name       = "s",
+        .args_type  = "fmt:/,addr:l,data:s",
+        .params     = "/fmt addr data",
+        .help       = "search virtual memory starting at 'addr' for 'data'",
+        .mhandler.cmd = hmp_memory_search,
+    },
+
+STEXI
+@item s/fmt @var{addr} @var{data}
+@findex s
+Virtual memory search starting at @var{addr} for data described by @var{data}.
+ETEXI
+
+    {
+        .name       = "sp",
+        .args_type  = "fmt:/,addr:l,data:s",
+        .params     = "/fmt addr data",
+        .help       = "search physical memory starting at 'addr' for 'data'",
+        .mhandler.cmd = hmp_physical_memory_search,
+    },
+
+STEXI
+@item sp/fmt @var{addr} @var{data}
+@findex sp
+Physical memory search starting at @var{addr} for data described by @var{data}.
+ETEXI
+
+    {
         .name       = "x",
         .args_type  = "fmt:/,addr:l",
         .params     = "/fmt addr",
