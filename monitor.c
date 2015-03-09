@@ -1208,6 +1208,100 @@ static void monitor_printc(Monitor *mon, int c)
     monitor_printf(mon, "'");
 }
 
+static void memory_search(Monitor *mon, int count, int format, int wsize,
+                          hwaddr addr, const char *data_str, bool is_physical)
+{
+    CPUArchState *env;
+    int l, i, len;
+    uint8_t buf[128] = { 0 };
+    uint64_t v, data_v;
+    const char *format_str;
+
+    if (format == 'i') {
+        monitor_printf(mon, "cannot search for instructions mnemonics, \n"
+                       "search for the corresponding bytes instead.\n");
+        return;
+    }
+
+    len = wsize * count;
+
+    switch (format) {
+    case 'o':
+        format_str = "%" SCNo64;
+        break;
+    default:
+    case 'x':
+        format_str = "%" SCNx64;
+        break;
+    case 'u':
+        format_str = "%" SCNu64;
+        break;
+    case 'd':
+        format_str = "%" SCNd64;
+        break;
+    case 'c':
+    case 's':
+        monitor_printf(mon, "string search not implemented yet.\n");
+        return;
+    }
+
+    if (sscanf(data_str, format_str, &data_v) != 1) {
+        monitor_printf(mon, "Error parsing search string \"%s\""
+                       " as format '%c'.\n", data_str, format);
+        return;
+    }
+
+    monitor_printf(mon, "searching memory...\n");
+
+    while (len > 0) {
+        l = len;
+        if (l > sizeof(buf)) {
+            l = sizeof(buf);
+        }
+
+        if (is_physical) {
+            cpu_physical_memory_read(addr, buf, l);
+        } else {
+            env = mon_get_cpu();
+            if (cpu_memory_rw_debug(ENV_GET_CPU(env), addr, buf, l, 0) < 0) {
+                /* just ignore what we cannot access */
+                continue;
+            }
+        }
+        i = 0;
+        while (i < l) {
+            switch (wsize) {
+            case 1:
+                v = ldub_p(buf + i);
+                break;
+            case 2:
+                v = lduw_p(buf + i);
+                break;
+            case 4:
+                v = (uint32_t)ldl_p(buf + i);
+                break;
+            case 8:
+                v = ldq_p(buf + i);
+                break;
+            default:
+                assert(0);
+            }
+
+            if (v == data_v) {
+                if (is_physical)
+                    monitor_printf(mon, TARGET_FMT_plx ": match\n", addr);
+                else
+                    monitor_printf(mon, TARGET_FMT_lx ": match\n", (target_ulong)addr);
+            }
+
+            i += 1; /* look for unaligned data too, do not increase by wsize */
+        }
+        monitor_printf(mon, "\n");
+        addr += l;
+        len -= l;
+    }
+}
+
 static void memory_dump(Monitor *mon, int count, int format, int wsize,
                         hwaddr addr, int is_physical)
 {
@@ -1330,6 +1424,28 @@ static void memory_dump(Monitor *mon, int count, int format, int wsize,
         addr += l;
         len -= l;
     }
+}
+
+static void hmp_memory_search(Monitor *mon, const QDict *qdict)
+{
+    int count = qdict_get_int(qdict, "count");
+    int format = qdict_get_int(qdict, "format");
+    int size = qdict_get_int(qdict, "size");
+    target_long addr = qdict_get_int(qdict, "addr");
+    const char *data_str = qdict_get_str(qdict, "data");
+
+    memory_search(mon, count, format, size, addr, data_str, 0);
+}
+
+static void hmp_physical_memory_search(Monitor *mon, const QDict *qdict)
+{
+    int count = qdict_get_int(qdict, "count");
+    int format = qdict_get_int(qdict, "format");
+    int size = qdict_get_int(qdict, "size");
+    hwaddr addr = qdict_get_int(qdict, "addr");
+    const char *data_str = qdict_get_str(qdict, "data");
+
+    memory_search(mon, count, format, size, addr, data_str, 1);
 }
 
 static void hmp_memory_dump(Monitor *mon, const QDict *qdict)
