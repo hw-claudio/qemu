@@ -3091,6 +3091,17 @@ if compile_prog "" "" ; then
 fi
 
 ##########################################
+# memmem probe
+cat > $TMPC <<EOF
+#include <string.h>
+int main(int argc, char *argv[]) { return memmem(argv[0], 0, argv[0], 0) != argv[0]; }
+EOF
+memmem=no
+if compile_prog "" "" ; then
+  memmem=yes
+fi
+
+##########################################
 # fdt probe
 # fdt support is mandatory for at least some target architectures,
 # so insist on it if we're building those system emulators.
@@ -4473,6 +4484,7 @@ echo "RDMA support      $rdma"
 echo "TCG interpreter   $tcg_interpreter"
 echo "fdt support       $fdt"
 echo "preadv support    $preadv"
+echo "memmem support    $memmem"
 echo "fdatasync         $fdatasync"
 echo "madvise           $madvise"
 echo "posix_madvise     $posix_madvise"
@@ -4821,6 +4833,9 @@ if test "$iovec" = "yes" ; then
 fi
 if test "$preadv" = "yes" ; then
   echo "CONFIG_PREADV=y" >> $config_host_mak
+fi
+if test "$memmem" = "yes" ; then
+  echo "CONFIG_MEMMEM=y" >> $config_host_mak
 fi
 if test "$fdt" = "yes" ; then
   echo "CONFIG_FDT=y" >> $config_host_mak

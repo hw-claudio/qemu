@@ -201,6 +201,10 @@ ssize_t writev(int fd, const struct iovec *iov, int iov_cnt);
 #include <sys/uio.h>
 #endif
 
+#ifndef CONFIG_MEMMEM
+void *memmem(const void *hay, size_t hay_len, const void *s, size_t s_len);
+#endif /* !CONFIG_MEMMEM */
+
 #ifdef _WIN32
 static inline void qemu_timersub(const struct timeval *val1,
                                  const struct timeval *val2,
