@@ -1219,7 +1219,7 @@ static void memory_search(Monitor *mon, int count, int format, int wsize,
         }
         if (is_physical) {
             cpu_physical_memory_read(addr, hay, l);
-        } else if (cpu_memory_rw_debug(ENV_GET_CPU(mon_get_cpu()), addr,
+        } else if (cpu_memory_rw_debug(mon_get_cpu(), addr,
                                        (uint8_t *)hay, l, 0) < 0) {
             monitor_printf(mon, " Cannot access memory\n");
             break;
