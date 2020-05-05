@@ -21,6 +21,7 @@
 #include <math.h>
 #include "cpu.h"
 #include "helper-tcg.h"
+#include "xcc-tcg.h"
 #include "exec/helper-proto.h"
 #include "qemu/host-utils.h"
 #include "exec/exec-all.h"
@@ -626,7 +627,7 @@ void update_fp_status(CPUX86State *env)
 
 void helper_fldcw(CPUX86State *env, uint32_t val)
 {
-    cpu_set_fpuc(env, val);
+    xcc_tcg_set_fpuc(env, val);
 }
 
 void helper_fclex(CPUX86State *env)
@@ -645,7 +646,7 @@ void helper_fninit(CPUX86State *env)
 {
     env->fpus = 0;
     env->fpstt = 0;
-    cpu_set_fpuc(env, 0x37f);
+    xcc_tcg_set_fpuc(env, 0x37f);
     env->fptags[0] = 1;
     env->fptags[1] = 1;
     env->fptags[2] = 1;
@@ -1090,11 +1091,11 @@ static void do_fldenv(CPUX86State *env, target_ulong ptr, int data32,
     int i, fpus, fptag;
 
     if (data32) {
-        cpu_set_fpuc(env, cpu_lduw_data_ra(env, ptr, retaddr));
+        xcc_tcg_set_fpuc(env, cpu_lduw_data_ra(env, ptr, retaddr));
         fpus = cpu_lduw_data_ra(env, ptr + 4, retaddr);
         fptag = cpu_lduw_data_ra(env, ptr + 8, retaddr);
     } else {
-        cpu_set_fpuc(env, cpu_lduw_data_ra(env, ptr, retaddr));
+        xcc_tcg_set_fpuc(env, cpu_lduw_data_ra(env, ptr, retaddr));
         fpus = cpu_lduw_data_ra(env, ptr + 2, retaddr);
         fptag = cpu_lduw_data_ra(env, ptr + 4, retaddr);
     }
@@ -1127,7 +1128,7 @@ void helper_fsave(CPUX86State *env, target_ulong ptr, int data32)
     /* fninit */
     env->fpus = 0;
     env->fpstt = 0;
-    cpu_set_fpuc(env, 0x37f);
+    xcc_tcg_set_fpuc(env, 0x37f);
     env->fptags[0] = 1;
     env->fptags[1] = 1;
     env->fptags[2] = 1;
@@ -1345,7 +1346,7 @@ static void do_xrstor_fpu(CPUX86State *env, target_ulong ptr, uintptr_t ra)
     fpuc = cpu_lduw_data_ra(env, ptr + XO(legacy.fcw), ra);
     fpus = cpu_lduw_data_ra(env, ptr + XO(legacy.fsw), ra);
     fptag = cpu_lduw_data_ra(env, ptr + XO(legacy.ftw), ra);
-    cpu_set_fpuc(env, fpuc);
+    xcc_tcg_set_fpuc(env, fpuc);
     cpu_set_fpus(env, fpus);
     fptag ^= 0xff;
     for (i = 0; i < 8; i++) {
@@ -1362,7 +1363,7 @@ static void do_xrstor_fpu(CPUX86State *env, target_ulong ptr, uintptr_t ra)
 
 static void do_xrstor_mxcsr(CPUX86State *env, target_ulong ptr, uintptr_t ra)
 {
-    cpu_set_mxcsr(env, cpu_ldl_data_ra(env, ptr + XO(legacy.mxcsr), ra));
+    xcc_tcg_set_mxcsr(env, cpu_ldl_data_ra(env, ptr + XO(legacy.mxcsr), ra));
 }
 
 static void do_xrstor_sse(CPUX86State *env, target_ulong ptr, uintptr_t ra)
@@ -1636,7 +1637,7 @@ void update_mxcsr_status(CPUX86State *env)
 
 void helper_ldmxcsr(CPUX86State *env, uint32_t val)
 {
-    cpu_set_mxcsr(env, val);
+    xcc_tcg_set_mxcsr(env, val);
 }
 
 void helper_enter_mmx(CPUX86State *env)

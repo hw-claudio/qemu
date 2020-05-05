@@ -25,6 +25,8 @@
 
 #include "cpu.h"
 #include "helper-tcg.h"
+#include "xcc-hw.h"
+#include "xcc-tcg.h"
 #include "exec/exec-all.h"
 #include "sysemu/kvm.h"
 #include "sysemu/reset.h"
@@ -51,6 +53,7 @@
 
 #include "sysemu/sysemu.h"
 #include "sysemu/tcg.h"
+#include "sysemu/hw_accel.h"
 #include "hw/qdev-properties.h"
 #include "hw/i386/topology.h"
 #ifndef CONFIG_USER_ONLY
@@ -5982,7 +5985,7 @@ static void x86_cpu_reset(DeviceState *dev)
     for (i = 0; i < 8; i++) {
         env->fptags[i] = 1;
     }
-    cpu_set_fpuc(env, 0x37f);
+    xcc->cpu_set_fpuc(env, 0x37f);
 
     env->mxcsr = 0x1f80;
     /* All units are in INIT state.  */
@@ -7223,6 +7226,10 @@ static Property x86_cpu_properties[] = {
     DEFINE_PROP_END_OF_LIST()
 };
 
+static void xcc_nop_report_tpr_access(CPUX86State *env, TPRAccess access)
+{
+}
+
 static void x86_cpu_common_class_init(ObjectClass *oc, void *data)
 {
     X86CPUClass *xcc = X86_CPU_CLASS(oc);
@@ -7282,6 +7289,25 @@ static void x86_cpu_common_class_init(ObjectClass *oc, void *data)
 #endif
     cc->disas_set_info = x86_disas_set_info;
 
+    /* initialize X86CPUClass methods */
+    xcc->cpu_compute_eflags = xcc_hw_compute_eflags;
+    xcc->cpu_set_mxcsr = xcc_hw_set_mxcsr;
+    xcc->cpu_set_fpuc = xcc_hw_set_fpuc;
+    xcc->cpu_report_tpr_access = xcc_nop_report_tpr_access;
+
+#ifdef CONFIG_TCG
+    if (tcg_enabled()) {
+        xcc->cpu_compute_eflags = xcc_tcg_compute_eflags;
+        xcc->cpu_set_mxcsr = xcc_tcg_set_mxcsr;
+        xcc->cpu_set_fpuc = xcc_tcg_set_fpuc;
+#ifndef CONFIG_USER_ONLY
+        xcc->cpu_report_tpr_access = xcc_tcg_report_tpr_access;
+#endif /* !CONFIG_USER_ONLY */
+    }
+#endif /* CONFIG_TCG */
+    if (kvm_enabled() || whpx_enabled()) {
+        xcc->cpu_report_tpr_access = xcc_hw_report_tpr_access;
+    }
     dc->user_creatable = true;
 }
 

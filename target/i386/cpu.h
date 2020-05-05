@@ -21,7 +21,6 @@
 #define I386_CPU_H
 
 #include "sysemu/tcg.h"
-#include "cpu-qom.h"
 #include "hyperv-proto.h"
 #include "exec/cpu-defs.h"
 #include "qapi/qapi-types-common.h"
@@ -1616,6 +1615,8 @@ typedef struct CPUX86State {
     unsigned pkg_offset;
 } CPUX86State;
 
+#include "cpu-qom.h"
+
 struct kvm_msrs;
 
 /**
@@ -2142,5 +2143,11 @@ static inline bool hyperv_feat_enabled(X86CPU *cpu, int feat)
     defined(CONFIG_LINUX)
 # define TARGET_VSYSCALL_PAGE  (UINT64_C(-10) << 20)
 #endif
+
+/* non-TCG (hw) methods operating on CPUX86State */
+uint32_t hw_cpu_compute_eflags(CPUX86State *env);
+void hw_cpu_set_mxcsr(CPUX86State *env, uint32_t mxcsr);
+void hw_cpu_set_fpuc(CPUX86State *env, uint16_t fpuc);
+void hw_cpu_report_tpr_access(CPUX86State *env, TPRAccess access);
 
 #endif /* I386_CPU_H */

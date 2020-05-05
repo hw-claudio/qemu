@@ -72,6 +72,12 @@ typedef struct X86CPUClass {
     DeviceRealize parent_realize;
     DeviceUnrealize parent_unrealize;
     DeviceReset parent_reset;
+
+    /* methods operating on CPUX86State */
+    uint32_t (*cpu_compute_eflags)(CPUX86State *env);
+    void (*cpu_set_mxcsr)(CPUX86State *env, uint32_t mxcsr);
+    void (*cpu_set_fpuc)(CPUX86State *env, uint16_t fpuc);
+    void (*cpu_report_tpr_access)(CPUX86State *env, TPRAccess access);
 } X86CPUClass;
 
 typedef struct X86CPU X86CPU;

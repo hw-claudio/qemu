@@ -21,6 +21,7 @@
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "helper-tcg.h"
+#include "xcc-tcg.h"
 #include "qemu/log.h"
 #include "exec/helper-proto.h"
 #include "exec/exec-all.h"
@@ -356,7 +357,7 @@ static void switch_tss_ra(CPUX86State *env, int tss_selector,
         e2 &= ~DESC_TSS_BUSY_MASK;
         cpu_stl_kernel_ra(env, ptr + 4, e2, retaddr);
     }
-    old_eflags = cpu_compute_eflags(env);
+    old_eflags = xcc_tcg_compute_eflags(env);
     if (source == SWITCH_TSS_IRET) {
         old_eflags &= ~NT_MASK;
     }
@@ -760,7 +761,7 @@ static void do_interrupt_protected(CPUX86State *env, int intno, int is_int,
             PUSHL(ssp, esp, sp_mask, env->segs[R_SS].selector);
             PUSHL(ssp, esp, sp_mask, env->regs[R_ESP]);
         }
-        PUSHL(ssp, esp, sp_mask, cpu_compute_eflags(env));
+        PUSHL(ssp, esp, sp_mask, xcc_tcg_compute_eflags(env));
         PUSHL(ssp, esp, sp_mask, env->segs[R_CS].selector);
         PUSHL(ssp, esp, sp_mask, old_eip);
         if (has_error_code) {
@@ -777,7 +778,7 @@ static void do_interrupt_protected(CPUX86State *env, int intno, int is_int,
             PUSHW(ssp, esp, sp_mask, env->segs[R_SS].selector);
             PUSHW(ssp, esp, sp_mask, env->regs[R_ESP]);
         }
-        PUSHW(ssp, esp, sp_mask, cpu_compute_eflags(env));
+        PUSHW(ssp, esp, sp_mask, xcc_tcg_compute_eflags(env));
         PUSHW(ssp, esp, sp_mask, env->segs[R_CS].selector);
         PUSHW(ssp, esp, sp_mask, old_eip);
         if (has_error_code) {
@@ -941,7 +942,7 @@ static void do_interrupt64(CPUX86State *env, int intno, int is_int,
 
     PUSHQ(esp, env->segs[R_SS].selector);
     PUSHQ(esp, env->regs[R_ESP]);
-    PUSHQ(esp, cpu_compute_eflags(env));
+    PUSHQ(esp, xcc_tcg_compute_eflags(env));
     PUSHQ(esp, env->segs[R_CS].selector);
     PUSHQ(esp, old_eip);
     if (has_error_code) {
@@ -992,7 +993,7 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
         int code64;
 
         env->regs[R_ECX] = env->eip + next_eip_addend;
-        env->regs[11] = cpu_compute_eflags(env) & ~RF_MASK;
+        env->regs[11] = xcc_tcg_compute_eflags(env) & ~RF_MASK;
 
         code64 = env->hflags & HF_CS64_MASK;
 
@@ -1116,7 +1117,7 @@ static void do_interrupt_real(CPUX86State *env, int intno, int is_int,
     }
     old_cs = env->segs[R_CS].selector;
     /* XXX: use SS segment size? */
-    PUSHW(ssp, esp, 0xffff, cpu_compute_eflags(env));
+    PUSHW(ssp, esp, 0xffff, xcc_tcg_compute_eflags(env));
     PUSHW(ssp, esp, 0xffff, old_cs);
     PUSHW(ssp, esp, 0xffff, old_eip);
 

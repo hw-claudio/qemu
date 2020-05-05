@@ -21,6 +21,7 @@
 #include "qemu/main-loop.h"
 #include "cpu.h"
 #include "helper-tcg.h"
+#include "xcc-tcg.h"
 #include "exec/helper-proto.h"
 #include "exec/log.h"
 
@@ -109,7 +110,7 @@ void do_smm_enter(X86CPU *cpu)
         x86_stq_phys(cs, sm_state + 0x7ff8 - i * 8, env->regs[i]);
     }
     x86_stq_phys(cs, sm_state + 0x7f78, env->eip);
-    x86_stl_phys(cs, sm_state + 0x7f70, cpu_compute_eflags(env));
+    x86_stl_phys(cs, sm_state + 0x7f70, xcc_tcg_compute_eflags(env));
     x86_stl_phys(cs, sm_state + 0x7f68, env->dr[6]);
     x86_stl_phys(cs, sm_state + 0x7f60, env->dr[7]);
 
@@ -122,7 +123,7 @@ void do_smm_enter(X86CPU *cpu)
 #else
     x86_stl_phys(cs, sm_state + 0x7ffc, env->cr[0]);
     x86_stl_phys(cs, sm_state + 0x7ff8, env->cr[3]);
-    x86_stl_phys(cs, sm_state + 0x7ff4, cpu_compute_eflags(env));
+    x86_stl_phys(cs, sm_state + 0x7ff4, xcc_tcg_compute_eflags(env));
     x86_stl_phys(cs, sm_state + 0x7ff0, env->eip);
     x86_stl_phys(cs, sm_state + 0x7fec, env->regs[R_EDI]);
     x86_stl_phys(cs, sm_state + 0x7fe8, env->regs[R_ESI]);

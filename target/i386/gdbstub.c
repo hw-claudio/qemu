@@ -264,6 +264,7 @@ static int x86_cpu_gdb_load_seg(X86CPU *cpu, int sreg, uint8_t *mem_buf)
 int x86_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
 {
     X86CPU *cpu = X86_CPU(cs);
+    X86CPUClass *xcc = X86_CPU_GET_CLASS(cpu);
     CPUX86State *env = &cpu->env;
     uint32_t tmp;
 
@@ -356,7 +357,7 @@ int x86_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
             return 4;
 
         case IDX_FP_REGS + 8:
-            cpu_set_fpuc(env, ldl_p(mem_buf));
+            xcc->cpu_set_fpuc(env, ldl_p(mem_buf));
             return 4;
         case IDX_FP_REGS + 9:
             tmp = ldl_p(mem_buf);
@@ -377,7 +378,7 @@ int x86_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
             return 4;
 
         case IDX_MXCSR_REG:
-            cpu_set_mxcsr(env, ldl_p(mem_buf));
+            xcc->cpu_set_mxcsr(env, ldl_p(mem_buf));
             return 4;
 
         case IDX_CTL_CR0_REG:

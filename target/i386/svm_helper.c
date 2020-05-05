@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "helper-tcg.h"
+#include "xcc-tcg.h"
 #include "exec/helper-proto.h"
 #include "exec/exec-all.h"
 #include "exec/cpu_ldst.h"
@@ -169,7 +170,7 @@ void helper_vmrun(CPUX86State *env, int aflag, int next_eip_addend)
              env->vm_hsave + offsetof(struct vmcb, save.efer), env->efer);
     x86_stq_phys(cs,
              env->vm_hsave + offsetof(struct vmcb, save.rflags),
-             cpu_compute_eflags(env));
+             xcc_tcg_compute_eflags(env));
 
     svm_save_seg(env, env->vm_hsave + offsetof(struct vmcb, save.es),
                  &env->segs[R_ES]);
@@ -682,7 +683,7 @@ void do_vmexit(CPUX86State *env, uint32_t exit_code, uint64_t exit_info_1)
              env->vm_vmcb + offsetof(struct vmcb, control.int_ctl), int_ctl);
 
     x86_stq_phys(cs, env->vm_vmcb + offsetof(struct vmcb, save.rflags),
-             cpu_compute_eflags(env));
+                 xcc_tcg_compute_eflags(env));
     x86_stq_phys(cs, env->vm_vmcb + offsetof(struct vmcb, save.rip),
              env->eip);
     x86_stq_phys(cs,

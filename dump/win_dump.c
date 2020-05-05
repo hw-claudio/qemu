@@ -252,7 +252,7 @@ static void patch_and_save_context(WinDumpHeader64 *h,
             .SegDs = env->segs[3].selector,
             .SegFs = env->segs[4].selector,
             .SegGs = env->segs[5].selector,
-            .EFlags = cpu_compute_eflags(env),
+            .EFlags = X86_CPU_GET_CLASS(x86_cpu)->cpu_compute_eflags(env),
 
             .Dr0 = env->dr[0],
             .Dr1 = env->dr[1],

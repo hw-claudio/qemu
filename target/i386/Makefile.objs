@@ -1,9 +1,9 @@
-obj-y += helper.o cpu.o gdbstub.o xsave_helper.o cpu-dump.o
+obj-y += helper.o cpu.o gdbstub.o xsave_helper.o cpu-dump.o xcc-hw.o
 obj-$(CONFIG_TCG) += translate.o
 obj-$(CONFIG_TCG) += bpt_helper.o cc_helper.o excp_helper.o fpu_helper.o
 obj-$(CONFIG_TCG) += int_helper.o mem_helper.o misc_helper.o mpx_helper.o
 obj-$(CONFIG_TCG) += seg_helper.o smm_helper.o svm_helper.o
-obj-$(CONFIG_TCG) += helper-tcg.o
+obj-$(CONFIG_TCG) += helper-tcg.o xcc-tcg.o
 
 obj-$(call lnot,$(CONFIG_KVM)) += kvm-stub.o
 ifeq ($(CONFIG_SOFTMMU),y)

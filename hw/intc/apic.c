@@ -678,7 +678,8 @@ static uint64_t apic_mem_read(void *opaque, hwaddr addr, unsigned size)
     case 0x08:
         apic_sync_vapic(s, SYNC_FROM_VAPIC);
         if (apic_report_tpr_access) {
-            cpu_report_tpr_access(&s->cpu->env, TPR_ACCESS_READ);
+            X86CPUClass *xcc = X86_CPU_GET_CLASS(&s->cpu);
+            xcc->cpu_report_tpr_access(&s->cpu->env, TPR_ACCESS_READ);
         }
         val = s->tpr;
         break;
@@ -789,7 +790,8 @@ static void apic_mem_write(void *opaque, hwaddr addr, uint64_t val,
         break;
     case 0x08:
         if (apic_report_tpr_access) {
-            cpu_report_tpr_access(&s->cpu->env, TPR_ACCESS_WRITE);
+            X86CPUClass *xcc = X86_CPU_GET_CLASS(&s->cpu);
+            xcc->cpu_report_tpr_access(&s->cpu->env, TPR_ACCESS_WRITE);
         }
         s->tpr = val;
         apic_sync_vapic(s, SYNC_TO_VAPIC);
