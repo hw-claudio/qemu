@@ -19,6 +19,7 @@
 
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "helper-tcg.h"
 #include "exec/helper-proto.h"
 
 const uint8_t parity_table[256] = {

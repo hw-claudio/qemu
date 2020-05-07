@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "qemu/main-loop.h"
 #include "cpu.h"
+#include "helper-tcg.h"
 #include "exec/helper-proto.h"
 #include "exec/log.h"
 
