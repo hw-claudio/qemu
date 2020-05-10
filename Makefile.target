@@ -176,8 +176,12 @@ generated-files-y += config-devices.h
 
 endif # CONFIG_SOFTMMU
 
-dummy := $(call unnest-vars,,obj-y)
+dummy := $(call unnest-vars,, \
+               obj-y \
+               accel-obj-y \
+               accel-obj-m)
 all-obj-y := $(obj-y)
+all-obj-y += $(accel-obj-y)
 
 include $(SRC_PATH)/Makefile.objs
 dummy := $(call unnest-vars,.., \
