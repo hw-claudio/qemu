@@ -1,9 +1,7 @@
-obj-$(CONFIG_SOFTMMU) += tcg-all.o
-obj-$(CONFIG_SOFTMMU) += cputlb.o
-obj-y += tcg-runtime.o tcg-runtime-gvec.o
-obj-y += cpu-exec.o cpu-exec-common.o translate-all.o
-obj-y += translator.o
-
-obj-$(CONFIG_USER_ONLY) += user-exec.o
-obj-$(call lnot,$(CONFIG_SOFTMMU)) += user-exec-stub.o
-obj-$(CONFIG_PLUGIN) += plugin-gen.o
+accel-obj-$(CONFIG_TCG) += accel-tcg.mo
+accel-tcg.mo-objs += $(if $(CONFIG_SOFTMMU),tcg-all.o cputlb.o,user-exec-stub.o)
+accel-tcg.mo-objs += $(if $(CONFIG_USER_ONLY),user-exec.o,)
+accel-tcg.mo-objs += $(if $(CONFIG_PLUGIN),plugin-gen.o,)
+accel-tcg.mo-objs += tcg-runtime.o tcg-runtime-gvec.o
+accel-tcg.mo-objs += cpu-exec.o cpu-exec-common.o translate-all.o
+accel-tcg.mo-objs += translator.o

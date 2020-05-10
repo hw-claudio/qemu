@@ -109,12 +109,22 @@ obj-y += trace/
 # cpu emulator library
 obj-y += exec.o exec-vary.o
 obj-y += accel/
-obj-$(CONFIG_TCG) += tcg/tcg.o tcg/tcg-op.o tcg/tcg-op-vec.o tcg/tcg-op-gvec.o
-obj-$(CONFIG_TCG) += tcg/tcg-common.o tcg/optimize.o
-obj-$(CONFIG_TCG_INTERPRETER) += tcg/tci.o
-obj-$(CONFIG_TCG_INTERPRETER) += disas/tci.o
-obj-$(CONFIG_TCG) += fpu/softfloat.o
 obj-y += target/$(TARGET_BASE_ARCH)/
+
+accel-obj-$(CONFIG_TCG) += accel/
+accel-obj-$(CONFIG_TCG) += tcg/
+accel-obj-$(CONFIG_TCG) += fpu/accel-tcg-softfloat.o
+accel-obj-$(CONFIG_TCG) += target/$(TARGET_BASE_ARCH)/
+accel-obj-$(CONFIG_TCG) += $(if $(CONFIG_TCI_INTERPRETER),disas/accel-tcg-tci.o)
+
+ifeq ($(CONFIG_MODULES)$(CONFIG_TCG),ym)
+accel-tcg-modules := accel/tcg/accel-tcg.mo tcg/accel-tcg-lib.mo fpu/accel-tcg-softfloat.mo
+accel-tcg-modules += target/$(TARGET_BASE_ARCH)/accel-tcg-target.mo
+accel-tcg-modules += $(if $(CONFIG_TCI_INTERPRETER),disas/accel-tcg-tci.mo)
+accel-tcg$(DSOSUF): $(accel-tcg-modules)
+	$(call LINKDEP "$^")
+endif
+
 obj-y += disas.o
 obj-$(call notempty,$(TARGET_XML_FILES)) += gdbstub-xml.o
 LIBS := $(libs_cpu) $(LIBS)
@@ -208,7 +218,7 @@ endif
 COMMON_LDADDS = ../libqemuutil.a
 
 # build either PROG or PROGW
-$(QEMU_PROG_BUILD): $(all-obj-y) $(COMMON_LDADDS) $(softmmu-main-y)
+$(QEMU_PROG_BUILD): $(all-obj-y) $(COMMON_LDADDS) $(softmmu-main-y) $(if $(and $(CONFIG_MODULES),$(findstring m,$(CONFIG_TCG))),accel-tcg$(DSOSUF))
 	$(call LINK, $(filter-out %.mak, $^))
 ifdef CONFIG_DARWIN
 	$(call quiet-command,Rez -append $(SRC_PATH)/pc-bios/qemu.rsrc -o $@,"REZ","$(TARGET_DIR)$@")

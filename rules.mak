@@ -80,6 +80,11 @@ LINK = $(call quiet-command, $(LINKPROG) $(CFLAGS) $(QEMU_LDFLAGS) -o $@ \
        $(call process-archive-undefs, $1) \
        $(version-obj-y) $(call extract-libs,$1) $(LIBS),"LINK","$(TARGET_DIR)$@")
 
+# simple link using the passed deps instead of LIBS used to build a DSO
+# from multiple .mo files
+LINKDEP = $(call quiet-command, $(LINKPROG) $(CFLAGS) $(QEMU_LDFLAGS) -o $@ \
+       $(version-obj-y) $^,"LINK","$(TARGET_DIR)$@")
+
 %.o: %.S
 	$(call quiet-command,$(CCAS) $(QEMU_LOCAL_INCLUDES) $(QEMU_INCLUDES) \
 	       $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) \
@@ -106,11 +111,12 @@ LINK = $(call quiet-command, $(LINKPROG) $(CFLAGS) $(QEMU_LDFLAGS) -o $@ \
 DSO_OBJ_CFLAGS := -fPIC -DBUILD_DSO
 module-common.o: CFLAGS += $(DSO_OBJ_CFLAGS)
 %$(DSOSUF): QEMU_LDFLAGS += $(LDFLAGS_SHARED)
-%$(DSOSUF): %.mo
+../%$(DSOSUF): DEST=$(subst /,-,$(subst ../,,$@))
+../%$(DSOSUF): ../%.mo
+	@# Link non-accelerator, non-target-specific modules
 	$(call LINK,$^)
 	@# Copy to build root so modules can be loaded when program started without install
-	$(if $(findstring /,$@),$(call quiet-command,cp $@ $(subst /,-,$@),"CP","$(subst /,-,$@)"))
-
+	$(call quiet-command,cp $@ ../$(DEST),"CP","$(DEST)")
 
 LD_REL := $(CC) -nostdlib $(LD_REL_FLAGS)
 
@@ -364,7 +370,7 @@ define unnest-vars
                    $(eval $($o-objs): CFLAGS += $(DSO_OBJ_CFLAGS))
                    $(eval $o: $($o-objs)))
              $(eval $(patsubst %-m,%-y,$v) += $($v))
-             $(eval modules: $($v:%.mo=%$(DSOSUF))),
+             $(if $(findstring accel-,$(v)),,$(eval modules: $($v:%.mo=%$(DSOSUF)))),
              $(eval $(patsubst %-m,%-y,$v) += $(call expand-objs, $($v)))))
 
     # Post-process all the unnested vars

@@ -1,0 +1,4 @@
+accel-obj-$(CONFIG_TCG) += accel-tcg-lib.mo
+accel-tcg-lib.mo-objs += tcg.o tcg-op.o tcg-op-vec.o tcg-op-gvec.o
+accel-tcg-lib.mo-objs += tcg-common.o optimize.o
+accel-tcg-lib.mo-objs += $(if $(CONFIG_TCG_INTERPRETER),tci.o,)

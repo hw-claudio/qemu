@@ -7207,7 +7207,7 @@ if test "$optreset" = "yes" ; then
   echo "HAVE_OPTRESET=y" >> $config_host_mak
 fi
 if test "$tcg" = "yes"; then
-  echo "CONFIG_TCG=y" >> $config_host_mak
+  echo "CONFIG_TCG=m" >> $config_host_mak
   if test "$tcg_interpreter" = "yes" ; then
     echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
   fi
