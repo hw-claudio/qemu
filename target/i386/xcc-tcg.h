@@ -24,5 +24,6 @@ uint32_t xcc_tcg_compute_eflags(CPUX86State *env);
 void xcc_tcg_set_mxcsr(CPUX86State *env, uint32_t mxcsr);
 void xcc_tcg_set_fpuc(CPUX86State *env, uint16_t fpuc);
 void xcc_tcg_report_tpr_access(CPUX86State *env, TPRAccess access);
+void xcc_tcg_post_load(CPUX86State *env);
 
 #endif /* I386_XCC_TCG_H */

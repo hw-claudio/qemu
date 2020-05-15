@@ -7230,6 +7230,10 @@ static void xcc_nop_report_tpr_access(CPUX86State *env, TPRAccess access)
 {
 }
 
+static void xcc_nop_method(CPUX86State *env)
+{
+}
+
 static void x86_cpu_common_class_init(ObjectClass *oc, void *data)
 {
     X86CPUClass *xcc = X86_CPU_CLASS(oc);
@@ -7294,6 +7298,7 @@ static void x86_cpu_common_class_init(ObjectClass *oc, void *data)
     xcc->cpu_set_mxcsr = xcc_hw_set_mxcsr;
     xcc->cpu_set_fpuc = xcc_hw_set_fpuc;
     xcc->cpu_report_tpr_access = xcc_nop_report_tpr_access;
+    xcc->cpu_post_load = xcc_nop_method;
 
 #ifdef CONFIG_TCG
     if (tcg_enabled()) {
@@ -7302,6 +7307,7 @@ static void x86_cpu_common_class_init(ObjectClass *oc, void *data)
         xcc->cpu_set_fpuc = xcc_tcg_set_fpuc;
 #ifndef CONFIG_USER_ONLY
         xcc->cpu_report_tpr_access = xcc_tcg_report_tpr_access;
+        xcc->cpu_post_load = xcc_tcg_post_load;
 #endif /* !CONFIG_USER_ONLY */
     }
 #endif /* CONFIG_TCG */

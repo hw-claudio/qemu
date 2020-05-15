@@ -23,8 +23,6 @@
 #include "sysemu/tcg.h"
 #include "exec/exec-all.h"
 
-bool tcg_allowed;
-
 /* exit the current TB, but without causing any exception to be raised */
 void cpu_loop_exit_noexc(CPUState *cpu)
 {

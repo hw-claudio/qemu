@@ -65,6 +65,11 @@ typedef enum {
 #define ui_module_load_one(lib) module_load_one("ui-", lib)
 #define audio_module_load_one(lib) module_load_one("audio-", lib)
 
+/* load target-specific modules */
+#ifdef TARGET_DIR
+#define accel_module_load_one(lib) module_load_one(TARGET_DIR "/accel-", lib)
+#endif /* TARGET_DIR */
+
 void register_module_init(void (*fn)(void), module_init_type type);
 void register_dso_module_init(void (*fn)(void), module_init_type type);
 

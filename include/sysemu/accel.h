@@ -26,6 +26,27 @@
 #include "qom/object.h"
 #include "exec/hwaddr.h"
 
+typedef struct AccelDriver {
+    const char *name;
+    const char *library;
+    bool registered;            /* the driver code is accessible */
+    bool allowed;
+} AccelDriver;
+
+enum AccelType {
+    ACCEL_TYPE_TCG = 0,
+    ACCEL_TYPE_N
+};
+
+/* for performance reasons, as accel_allowed is called in hot paths */
+extern AccelDriver accel_drvs[];
+static inline bool accel_allowed(enum AccelType at) {
+    return accel_drvs[at].allowed;
+}
+
+/* mark an accelerator as available */
+void accel_drv_register(enum AccelType at);
+
 typedef struct AccelState {
     /*< private >*/
     Object parent_obj;

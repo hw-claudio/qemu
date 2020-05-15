@@ -78,6 +78,7 @@ typedef struct X86CPUClass {
     void (*cpu_set_mxcsr)(CPUX86State *env, uint32_t mxcsr);
     void (*cpu_set_fpuc)(CPUX86State *env, uint16_t fpuc);
     void (*cpu_report_tpr_access)(CPUX86State *env, TPRAccess access);
+    void (*cpu_post_load)(CPUX86State *env);
 } X86CPUClass;
 
 typedef struct X86CPU X86CPU;

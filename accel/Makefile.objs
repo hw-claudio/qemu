@@ -1,5 +1,6 @@
 common-obj-$(CONFIG_SOFTMMU) += accel.o
 obj-$(call land,$(CONFIG_SOFTMMU),$(CONFIG_POSIX)) += qtest.o
+obj-y += accel_drv.o
 obj-$(CONFIG_KVM) += kvm/
 accel-obj-$(CONFIG_TCG) += tcg/
 obj-y += stubs/

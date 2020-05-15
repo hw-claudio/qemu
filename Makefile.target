@@ -218,7 +218,7 @@ endif
 COMMON_LDADDS = ../libqemuutil.a
 
 # build either PROG or PROGW
-$(QEMU_PROG_BUILD): $(all-obj-y) $(COMMON_LDADDS) $(softmmu-main-y) $(if $(and $(CONFIG_MODULES),$(findstring m,$(CONFIG_TCG))),accel-tcg$(DSOSUF))
+$(QEMU_PROG_BUILD): $(all-obj-y) $(COMMON_LDADDS) $(softmmu-main-y)
 	$(call LINK, $(filter-out %.mak, $^))
 ifdef CONFIG_DARWIN
 	$(call quiet-command,Rez -append $(SRC_PATH)/pc-bios/qemu.rsrc -o $@,"REZ","$(TARGET_DIR)$@")

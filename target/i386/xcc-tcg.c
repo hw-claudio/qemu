@@ -42,6 +42,24 @@ void xcc_tcg_set_fpuc(CPUX86State *env, uint16_t fpuc)
     update_fp_status(env);
 }
 
+void xcc_tcg_post_load(CPUX86State *env)
+{
+    CPUState *cs = env_cpu(env);
+    target_ulong dr7;
+    update_fp_status(env);
+    update_mxcsr_status(env);
+
+    cpu_breakpoint_remove_all(cs, BP_CPU);
+    cpu_watchpoint_remove_all(cs, BP_CPU);
+
+    /* Indicate all breakpoints disabled, as they are, then
+       let the helper re-enable them.  */
+    dr7 = env->dr[7];
+    env->dr[7] = dr7 & ~(DR7_GLOBAL_BP_MASK | DR7_LOCAL_BP_MASK);
+    cpu_x86_update_dr7(env, dr7);
+    tlb_flush(cs);
+}
+
 #ifndef CONFIG_USER_ONLY
 void xcc_tcg_report_tpr_access(CPUX86State *env, TPRAccess access)
 {
