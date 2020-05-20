@@ -72,7 +72,51 @@
 #include "sysemu/accel.h"
 #include "target/i386/cpu.h"
 
+#include "hvf_cpus_interface.h"
+
 HVFState *hvf_state;
+
+/* TODO: synchronize vcpu state */
+static void do_hvf_cpu_synchronize_state(CPUState *cpu, run_on_cpu_data arg)
+{
+    CPUState *cpu_state = cpu;
+    if (cpu_state->vcpu_dirty == 0) {
+        hvf_get_registers(cpu_state);
+    }
+
+    cpu_state->vcpu_dirty = 1;
+}
+
+void hvf_cpu_synchronize_state(CPUState *cpu_state)
+{
+    if (cpu_state->vcpu_dirty == 0) {
+        run_on_cpu(cpu_state, do_hvf_cpu_synchronize_state, RUN_ON_CPU_NULL);
+    }
+}
+
+static void do_hvf_cpu_synchronize_post_reset(CPUState *cpu, run_on_cpu_data arg)
+{
+    CPUState *cpu_state = cpu;
+    hvf_put_registers(cpu_state);
+    cpu_state->vcpu_dirty = false;
+}
+
+void hvf_cpu_synchronize_post_reset(CPUState *cpu_state)
+{
+    run_on_cpu(cpu_state, do_hvf_cpu_synchronize_post_reset, RUN_ON_CPU_NULL);
+}
+
+static void _hvf_cpu_synchronize_post_init(CPUState *cpu, run_on_cpu_data arg)
+{
+    CPUState *cpu_state = cpu;
+    hvf_put_registers(cpu_state);
+    cpu_state->vcpu_dirty = false;
+}
+
+void hvf_cpu_synchronize_post_init(CPUState *cpu_state)
+{
+    run_on_cpu(cpu_state, _hvf_cpu_synchronize_post_init, RUN_ON_CPU_NULL);
+}
 
 static void assert_hvf_ok(hv_return_t ret)
 {
@@ -280,48 +324,6 @@ void hvf_handle_io(CPUArchState *env, uint16_t port, void *buffer,
                          direction);
         ptr += size;
     }
-}
-
-/* TODO: synchronize vcpu state */
-static void do_hvf_cpu_synchronize_state(CPUState *cpu, run_on_cpu_data arg)
-{
-    CPUState *cpu_state = cpu;
-    if (cpu_state->vcpu_dirty == 0) {
-        hvf_get_registers(cpu_state);
-    }
-
-    cpu_state->vcpu_dirty = 1;
-}
-
-void hvf_cpu_synchronize_state(CPUState *cpu_state)
-{
-    if (cpu_state->vcpu_dirty == 0) {
-        run_on_cpu(cpu_state, do_hvf_cpu_synchronize_state, RUN_ON_CPU_NULL);
-    }
-}
-
-static void do_hvf_cpu_synchronize_post_reset(CPUState *cpu, run_on_cpu_data arg)
-{
-    CPUState *cpu_state = cpu;
-    hvf_put_registers(cpu_state);
-    cpu_state->vcpu_dirty = false;
-}
-
-void hvf_cpu_synchronize_post_reset(CPUState *cpu_state)
-{
-    run_on_cpu(cpu_state, do_hvf_cpu_synchronize_post_reset, RUN_ON_CPU_NULL);
-}
-
-void _hvf_cpu_synchronize_post_init(CPUState *cpu, run_on_cpu_data arg)
-{
-    CPUState *cpu_state = cpu;
-    hvf_put_registers(cpu_state);
-    cpu_state->vcpu_dirty = false;
-}
-
-void hvf_cpu_synchronize_post_init(CPUState *cpu_state)
-{
-    run_on_cpu(cpu_state, _hvf_cpu_synchronize_post_init, RUN_ON_CPU_NULL);
 }
 
 static bool ept_emulation_fault(hvf_slot *slot, uint64_t gpa, uint64_t ept_qual)
@@ -979,6 +981,7 @@ static int hvf_accel_init(MachineState *ms)
     hvf_state = s;
     cpu_interrupt_handler = hvf_handle_interrupt;
     memory_listener_register(&hvf_memory_listener, &address_space_memory);
+    cpus_register_accel_interface(&hvf_cpus_interface);
     return 0;
 }
 
