@@ -63,6 +63,9 @@
 
 #include "sysemu/cpu-throttle.h"
 
+#include "migration/qemu-file-types.h"
+#include "migration/register.h"
+
 #ifdef CONFIG_LINUX
 
 #include <sys/prctl.h>
@@ -732,11 +735,76 @@ static const VMStateDescription vmstate_timers = {
     }
 };
 
+static void s390_storage_keys_save(QEMUFile *f, void *opaque)
+{
+    uint64_t eos = 1, data = 2;
+    uint8_t *buf;
+
+    buf = g_try_malloc(32768);
+    if (!buf) {
+        error_report("storage key save could not allocate memory");
+        goto end_stream;
+    }
+
+    qemu_put_be64(f, data);
+    qemu_put_be64(f, 32768);
+
+    memset(buf, 0, 32768);
+    qemu_put_buffer(f, buf, 32768);
+    g_free(buf);
+
+ end_stream:
+    qemu_put_be64(f, eos);
+}
+
+static int s390_storage_keys_load(QEMUFile *f, void *opaque, int version_id)
+{
+    int ret = 0;
+    uint64_t data;
+    uint8_t *buf;
+
+    while (ret == 0) {
+        data = qemu_get_be64(f);
+
+        switch (data) {
+        case 2: {
+            const uint64_t total_count = qemu_get_be64(f);
+            buf = g_try_malloc(32768);
+            if (!buf) {
+                error_report("storage key load could not allocate memory");
+                ret = -ENOMEM;
+                break;
+            }
+            qemu_get_buffer(f, buf, total_count);
+            g_free(buf);
+            break;
+        }
+        case 1: {
+            /* normal exit */
+            return 0;
+        }
+        default:
+            error_report("Unexpected storage key data: %#lx", data);
+            ret = -EINVAL;
+        }
+    }
+    return ret;
+}
+
+static SaveVMHandlers savevm_s390_storage_keys = {
+    .save_state = s390_storage_keys_save,
+    .load_state = s390_storage_keys_load,
+};
+
 void cpu_ticks_init(void)
 {
     seqlock_init(&timers_state.vm_clock_seqlock);
     qemu_spin_init(&timers_state.vm_clock_lock);
     vmstate_register(NULL, 0, &vmstate_timers, &timers_state);
+
+    register_savevm_live("s390-skeys", 0, 1,
+                         &savevm_s390_storage_keys, NULL);
+
     cpu_throttle_init();
 }
 

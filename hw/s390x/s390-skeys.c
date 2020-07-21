@@ -389,7 +389,7 @@ static inline void s390_skeys_set_migration_enabled(Object *obj, bool value,
     ss->migration_enabled = value;
 
     if (ss->migration_enabled) {
-        register_savevm_live(TYPE_S390_SKEYS, 0, 1,
+        register_savevm_live("s390-oldkeys", 0, 1,
                              &savevm_s390_storage_keys, ss);
     } else {
         unregister_savevm(VMSTATE_IF(ss), TYPE_S390_SKEYS, ss);

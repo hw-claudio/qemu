@@ -1163,6 +1163,11 @@ void qemu_savevm_state_setup(QEMUFile *f)
 
     trace_savevm_state_setup();
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
+
+        if (strcmp(se->idstr, "s390-skeys") != 0) {
+            /* only save keys */
+            continue;
+        }
         if (!se->ops || !se->ops->save_setup) {
             continue;
         }
@@ -1194,6 +1199,11 @@ int qemu_savevm_state_resume_prepare(MigrationState *s)
     trace_savevm_state_resume_prepare();
 
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
+
+        if (strcmp(se->idstr, "s390-skeys") != 0) {
+            /* only save keys */
+            continue;
+        }
         if (!se->ops || !se->ops->resume_prepare) {
             continue;
         }
@@ -1224,6 +1234,11 @@ int qemu_savevm_state_iterate(QEMUFile *f, bool postcopy)
 
     trace_savevm_state_iterate();
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
+
+        if (strcmp(se->idstr, "s390-skeys") != 0) {
+            /* only save keys */
+            continue;
+        }
         if (!se->ops || !se->ops->save_live_iterate) {
             continue;
         }
@@ -1325,6 +1340,12 @@ int qemu_savevm_state_complete_precopy_iterable(QEMUFile *f, bool in_postcopy)
     int ret;
 
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
+
+        if (strcmp(se->idstr, "s390-skeys") != 0) {
+            /* only save keys */
+            continue;
+        }
+
         if (!se->ops ||
             (in_postcopy && se->ops->has_postcopy &&
              se->ops->has_postcopy(se->opaque)) ||
@@ -1367,6 +1388,11 @@ int qemu_savevm_state_complete_precopy_non_iterable(QEMUFile *f,
     json_prop_int(vmdesc, "page_size", qemu_target_page_size());
     json_start_array(vmdesc, "devices");
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
+
+        if (strcmp(se->idstr, "s390-skeys") != 0) {
+            /* only save keys */
+            continue;
+        }
 
         if ((!se->ops || !se->ops->save_state) && !se->vmsd) {
             continue;
@@ -1582,6 +1608,11 @@ int qemu_save_device_state(QEMUFile *f)
 
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
         int ret;
+
+        if (strcmp(se->idstr, "s390-skeys") != 0) {
+            /* only save keys */
+            continue;
+        }
 
         if (se->is_ram) {
             continue;
