@@ -59,6 +59,7 @@
 #include "sysemu/runstate.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/xen.h"
+#include "sysemu/tcg.h"
 #include "qjson.h"
 #include "migration/colo.h"
 #include "qemu/bitmap.h"
@@ -2674,7 +2675,7 @@ int save_snapshot(const char *name, Error **errp)
         return ret;
     }
 
-    if (!replay_can_snapshot()) {
+    if (tcg_enabled() && !replay_can_snapshot()) {
         error_setg(errp, "Record/replay does not allow making snapshot "
                    "right now. Try once more later.");
         return ret;
