@@ -1155,6 +1155,12 @@ static void tb_htable_init(void)
 void tcg_exec_init(unsigned long tb_size)
 {
     tcg_allowed = true;
+    /*
+     * tcg cpu type fixup could be done here instead of tcg/i386/tcg-target.c.inc,
+     * but all targets would need to export the symbol
+     *
+     * tcg_cpu_type_init();
+     */
     cpu_gen_init();
     page_init();
     tb_htable_init();

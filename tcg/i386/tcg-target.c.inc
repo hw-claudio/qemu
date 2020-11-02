@@ -3847,8 +3847,11 @@ static void tcg_out_nop_fill(tcg_insn_unit *p, int count)
     memset(p, 0x90, count);
 }
 
+#include "tcg-cpu-type.h"
+
 static void tcg_target_init(TCGContext *s)
 {
+    tcg_cpu_type_init();
 #ifdef CONFIG_CPUID_H
     unsigned a, b, c, d, b7 = 0;
     int max = __get_cpuid_max(0, 0);
