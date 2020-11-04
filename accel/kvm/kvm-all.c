@@ -49,6 +49,7 @@
 #include "kvm-cpus.h"
 
 #include "hw/boards.h"
+#include "kvm-cpu-type.h"
 
 /* This check must be after config-host.h is included */
 #ifdef CONFIG_EVENTFD
@@ -2253,6 +2254,7 @@ static int kvm_init(MachineState *ms)
     }
 
     cpus_register_accel(&kvm_cpus);
+    kvm_cpu_type_init(); /* fixup base arch cpu type for KVM */
     return 0;
 
 err:

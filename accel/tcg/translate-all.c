@@ -23,6 +23,9 @@
 
 #define NO_CPU_IO_DEFS
 #include "cpu.h"
+#ifdef TARGET_HAS_TCG_CPU_TYPE_INIT
+#include "tcg-cpu-type.h"
+#endif
 #include "trace.h"
 #include "disas/disas.h"
 #include "exec/exec-all.h"
@@ -1155,6 +1158,12 @@ static void tb_htable_init(void)
 void tcg_exec_init(unsigned long tb_size)
 {
     tcg_allowed = true;
+    /*
+     * for targets which (already) implement late tcg cpu type initialization
+     */
+#ifdef TARGET_HAS_TCG_CPU_TYPE_INIT
+    tcg_cpu_type_init();
+#endif
     cpu_gen_init();
     page_init();
     tb_htable_init();

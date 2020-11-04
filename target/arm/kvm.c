@@ -43,6 +43,10 @@ static bool cap_has_inject_ext_dabt;
 
 static ARMHostCPUFeatures arm_host_cpu_features;
 
+void kvm_cpu_type_init(void)
+{
+}
+
 int kvm_arm_vcpu_init(CPUState *cs)
 {
     ARMCPU *cpu = ARM_CPU(cs);
