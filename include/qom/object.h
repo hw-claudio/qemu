@@ -837,6 +837,23 @@ Type type_register_static(const TypeInfo *info);
 Type type_register(const TypeInfo *info);
 
 /**
+ * type_overload_init:
+ * @info: The #TypeInfo of the type to overload with new initializers
+ *
+ * This is a hack to change a type initializers at runtime.
+ * It is necessary to be able to create per-accel subclasses of
+ * of arch cpus, without changing the base type.
+ *
+ * The type is selected via name (MANDATORY) in info->name.
+ *
+ * Class and Instance initializers, finalizers, and class data
+ * can be overloaded by setting non-NULL values in the passed Info.
+ *
+ * All other information passed in info is ignored.
+ */
+void type_overload_init(const TypeInfo *info);
+
+/**
  * type_register_static_array:
  * @infos: The array of the new type #TypeInfo structures.
  * @nr_infos: number of entries in @infos

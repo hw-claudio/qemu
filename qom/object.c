@@ -192,6 +192,37 @@ static bool type_has_parent(TypeImpl *type)
     return (type->parent != NULL);
 }
 
+void type_overload_init(const TypeInfo *info)
+{
+    TypeImpl *ti;
+    /*
+     * lookup the existing registered type.
+     */
+    g_assert(info->name != NULL);
+
+    ti = type_get_by_name(info->name);
+    g_assert(ti != NULL);
+
+    if (info->class_init) {
+        ti->class_init = info->class_init;
+    }
+    if (info->class_base_init) {
+        ti->class_base_init = info->class_base_init;
+    }
+    if (info->class_data) {
+        ti->class_data = info->class_data;
+    }
+    if (info->instance_init) {
+        ti->instance_init = info->instance_init;
+    }
+    if (info->instance_post_init) {
+        ti->instance_post_init = info->instance_post_init;
+    }
+    if (info->instance_finalize) {
+        ti->instance_finalize = info->instance_finalize;
+    }
+}
+
 static size_t type_class_get_size(TypeImpl *ti)
 {
     if (ti->class_size) {
