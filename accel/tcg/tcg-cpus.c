@@ -80,3 +80,20 @@ void tcg_cpus_handle_interrupt(CPUState *cpu, int mask)
         qatomic_set(&cpu_neg(cpu)->icount_decr.u16.high, -1);
     }
 }
+
+static void tcg_accel_cpu_init(void)
+{
+    if (tcg_enabled()) {
+        TCGState *s = TCG_STATE(current_accel());
+
+        if (s->mttcg_enabled) {
+            cpus_register_accel(&tcg_cpus_mttcg);
+        } else if (icount_enabled()) {
+            cpus_register_accel(&tcg_cpus_icount);
+        } else {
+            cpus_register_accel(&tcg_cpus_rr);
+        }
+    }
+}
+
+accel_cpu_init(tcg_accel_cpu_init);
