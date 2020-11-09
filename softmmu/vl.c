@@ -4175,7 +4175,7 @@ void qemu_init(int argc, char **argv, char **envp)
 
     /*
      * accelerator has been chosen and initialized, now it is time to
-     * register the cpu accel interface.
+     * register the cpu models, and the cpu accel interface.
      */
     module_call_init(MODULE_INIT_ACCEL_CPU);
 
