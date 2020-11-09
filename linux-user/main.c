@@ -710,6 +710,7 @@ int main(int argc, char **argv, char **envp)
         g_assert(ac != NULL);
         ac->init_machine(NULL);
     }
+    module_call_init(MODULE_INIT_ACCEL_CPU);
     cpu = cpu_create(cpu_type);
     env = cpu->env_ptr;
     cpu_reset(cpu);

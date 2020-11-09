@@ -915,6 +915,7 @@ int main(int argc, char **argv)
         g_assert(ac != NULL);
         ac->init_machine(NULL);
     }
+    module_call_init(MODULE_INIT_ACCEL_CPU);
     cpu_type = parse_cpu_option(cpu_model);
     cpu = cpu_create(cpu_type);
     env = cpu->env_ptr;
