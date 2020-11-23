@@ -7066,18 +7066,31 @@ type_init(x86_cpu_register_types)
 static void x86_cpu_accel_init_aux(ObjectClass *klass, void *opaque)
 {
     X86CPUClass *xcc = X86_CPU_CLASS(klass);
-    const X86CPUAccelClass **accel = opaque;
+    X86CPUAccelClass *accel = opaque;
 
-    xcc->accel = *accel;
+    xcc->accel = accel;
     xcc->accel->cpu_common_class_init(xcc);
 }
 
-void x86_cpu_accel_init(const char *accel_name)
+static void x86_cpu_accel_init(void)
 {
-    X86CPUAccelClass *acc;
+    const char *ac_name;
+    ObjectClass *ac;
+    char *xac_name;
+    ObjectClass *xac;
 
-    acc = X86_CPU_ACCEL_CLASS(object_class_by_name(accel_name));
-    g_assert(acc != NULL);
+    ac = object_get_class(OBJECT(current_accel()));
+    g_assert(ac != NULL);
+    ac_name = object_class_get_name(ac);
+    g_assert(ac_name != NULL);
 
-    object_class_foreach(x86_cpu_accel_init_aux, TYPE_X86_CPU, false, &acc);
+    xac_name = g_strdup_printf("%s-%s", ac_name, TYPE_X86_CPU);
+    xac = object_class_by_name(xac_name);
+    g_free(xac_name);
+
+    if (xac) {
+        object_class_foreach(x86_cpu_accel_init_aux, TYPE_X86_CPU, false, xac);
+    }
 }
+
+accel_cpu_init(x86_cpu_accel_init);

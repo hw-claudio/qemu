@@ -30,9 +30,8 @@
 #include "tcg/tcg.h"
 #include "qapi/error.h"
 #include "qemu/error-report.h"
-#include "hw/boards.h"
+#include "qemu/accel.h"
 #include "qapi/qapi-builtin-visit.h"
-#include "tcg-cpus.h"
 
 struct TCGState {
     AccelState parent_obj;

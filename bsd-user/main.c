@@ -908,7 +908,12 @@ int main(int argc, char **argv)
     }
 
     /* init tcg before creating CPUs and to get qemu_host_page_size */
-    tcg_exec_init(0);
+    {
+        AccelClass *ac = accel_find("tcg");
+
+        g_assert(ac != NULL);
+        ac->init_machine(NULL);
+    }
     module_call_init(MODULE_INIT_ACCEL_CPU);
 
     cpu_type = parse_cpu_option(cpu_model);
@@ -989,7 +994,6 @@ int main(int argc, char **argv)
        generating the prologue until now so that the prologue can take
        the real value of GUEST_BASE into account.  */
     tcg_prologue_init(tcg_ctx);
-    tcg_region_init();
 
     /* build Task State */
     memset(ts, 0, sizeof(TaskState));

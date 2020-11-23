@@ -147,11 +147,3 @@ static void kvm_cpu_accel_register_types(void)
     type_register_static(&kvm_cpu_accel_type_info);
 }
 type_init(kvm_cpu_accel_register_types);
-
-static void kvm_cpu_accel_init(void)
-{
-    if (kvm_enabled()) {
-        x86_cpu_accel_init(X86_CPU_ACCEL_TYPE_NAME("kvm"));
-    }
-}
-accel_cpu_init(kvm_cpu_accel_init);

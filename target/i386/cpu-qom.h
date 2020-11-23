@@ -34,7 +34,7 @@ OBJECT_DECLARE_TYPE(X86CPU, X86CPUClass,
                     X86_CPU)
 
 
-#define TYPE_X86_CPU_ACCEL TYPE_X86_CPU "-accel"
+#define TYPE_X86_CPU_ACCEL "accel-" TYPE_X86_CPU
 #define X86_CPU_ACCEL_TYPE_NAME(name) (name "-" TYPE_X86_CPU_ACCEL)
 typedef struct X86CPUAccelClass X86CPUAccelClass;
 DECLARE_CLASS_CHECKERS(X86CPUAccelClass, X86_CPU_ACCEL, TYPE_X86_CPU_ACCEL)
@@ -97,7 +97,5 @@ struct X86CPUAccelClass {
     void (*cpu_instance_init)(X86CPU *cpu);
     void (*cpu_realizefn)(X86CPU *cpu, Error **errp);
 };
-
-void x86_cpu_accel_init(const char *accel_name);
 
 #endif

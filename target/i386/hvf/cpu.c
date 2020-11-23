@@ -65,12 +65,3 @@ static void hvf_cpu_accel_register_types(void)
     type_register_static(&hvf_cpu_accel_type_info);
 }
 type_init(hvf_cpu_accel_register_types);
-
-static void hvf_cpu_accel_init(void)
-{
-    if (hvf_enabled()) {
-        x86_cpu_accel_init(X86_CPU_ACCEL_TYPE_NAME("hvf"));
-    }
-}
-
-accel_cpu_init(hvf_cpu_accel_init);

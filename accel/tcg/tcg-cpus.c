@@ -84,9 +84,7 @@ void tcg_cpus_handle_interrupt(CPUState *cpu, int mask)
 static void tcg_accel_cpu_init(void)
 {
     if (tcg_enabled()) {
-        TCGState *s = TCG_STATE(current_accel());
-
-        if (s->mttcg_enabled) {
+        if (qemu_tcg_mttcg_enabled()) {
             cpus_register_accel(&tcg_cpus_mttcg);
         } else if (icount_enabled()) {
             cpus_register_accel(&tcg_cpus_icount);
