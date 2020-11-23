@@ -30,9 +30,12 @@
 #include "tcg/tcg.h"
 #include "qapi/error.h"
 #include "qemu/error-report.h"
-#include "hw/boards.h"
+#include "qemu/accel.h"
 #include "qapi/qapi-builtin-visit.h"
+
+#ifndef CONFIG_USER_ONLY
 #include "tcg-cpus.h"
+#endif /* CONFIG_USER_ONLY */
 
 struct TCGState {
     AccelState parent_obj;
@@ -110,6 +113,7 @@ static int tcg_init(MachineState *ms)
      */
     tcg_region_init();
 
+#ifndef CONFIG_USER_ONLY
     if (mttcg_enabled) {
         cpus_register_accel(&tcg_cpus_mttcg);
     } else if (icount_enabled()) {
@@ -117,6 +121,7 @@ static int tcg_init(MachineState *ms)
     } else {
         cpus_register_accel(&tcg_cpus_rr);
     }
+#endif /* CONFIG_USER_ONLY */
     return 0;
 }
 
