@@ -170,12 +170,3 @@ static void tcg_cpu_accel_register_types(void)
     type_register_static(&tcg_cpu_accel_type_info);
 }
 type_init(tcg_cpu_accel_register_types);
-
-static void tcg_cpu_accel_init(void)
-{
-    if (tcg_enabled()) {
-        x86_cpu_accel_init(X86_CPU_ACCEL_TYPE_NAME("tcg"));
-    }
-}
-
-accel_cpu_init(tcg_cpu_accel_init);

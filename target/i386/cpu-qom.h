@@ -98,6 +98,4 @@ struct X86CPUAccelClass {
     void (*cpu_realizefn)(X86CPU *cpu, Error **errp);
 };
 
-void x86_cpu_accel_init(const char *accel_name);
-
 #endif
