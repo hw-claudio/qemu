@@ -127,7 +127,7 @@ void hw_error(const char *fmt, ...)
 /*
  * The chosen accelerator is supposed to register this.
  */
-static const CpusAccel *cpus_accel;
+static CpusAccelOps *cpus_accel;
 
 void cpu_synchronize_all_states(void)
 {
@@ -593,13 +593,6 @@ void cpu_remove_sync(CPUState *cpu)
     qemu_mutex_lock_iothread();
 }
 
-void cpus_register_accel(const CpusAccel *ca)
-{
-    assert(ca != NULL);
-    assert(ca->create_vcpu_thread != NULL); /* mandatory */
-    cpus_accel = ca;
-}
-
 void qemu_init_vcpu(CPUState *cpu)
 {
     MachineState *ms = MACHINE(qdev_get_machine());
@@ -617,7 +610,7 @@ void qemu_init_vcpu(CPUState *cpu)
         cpu_address_space_init(cpu, 0, "cpu-memory", cpu->memory);
     }
 
-    /* accelerators all implement the CpusAccel interface */
+    /* accelerators all implement the CpusAccelOps */
     g_assert(cpus_accel != NULL && cpus_accel->create_vcpu_thread != NULL);
     cpus_accel->create_vcpu_thread(cpu);
 
@@ -797,3 +790,43 @@ void qmp_inject_nmi(Error **errp)
     nmi_monitor_handle(monitor_get_cpu_index(monitor_cur()), errp);
 }
 
+static const TypeInfo cpus_accel_type_info = {
+    .name = TYPE_CPUS_ACCEL_OPS,
+    .parent = TYPE_OBJECT,
+    .abstract = true,
+    .class_size = sizeof(CpusAccelOps),
+};
+static void cpus_register_types(void)
+{
+    type_register_static(&cpus_accel_type_info);
+}
+type_init(cpus_register_types);
+
+static void cpus_accel_ops_init(void)
+{
+    const char *ac_name;
+    ObjectClass *ac;
+    char *ops_name;
+    ObjectClass *ops;
+
+    ac = object_get_class(OBJECT(current_accel()));
+    g_assert(ac != NULL);
+    ac_name = object_class_get_name(ac);
+    g_assert(ac_name != NULL);
+
+    ops_name = g_strdup_printf("%s-ops", ac_name);
+    ops = object_class_by_name(ops_name);
+    g_free(ops_name);
+
+    /*
+     * all accelerators need to define ops, providing at least a mandatory
+     * non-NULL create_vcpu_thread operation.
+     */
+    g_assert(ops != NULL);
+    cpus_accel = CPUS_ACCEL_OPS_CLASS(ops);
+    if (cpus_accel->accel_chosen_init) {
+        cpus_accel->accel_chosen_init(cpus_accel);
+    }
+}
+
+accel_cpu_init(cpus_accel_ops_init);

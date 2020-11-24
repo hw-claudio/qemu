@@ -1711,12 +1711,3 @@ error:
 }
 
 type_init(whpx_type_init);
-
-static void whpx_accel_cpu_init(void)
-{
-    if (whpx_enabled()) {
-        cpus_register_accel(&whpx_cpus);
-    }
-}
-
-accel_cpu_init(whpx_accel_cpu_init);

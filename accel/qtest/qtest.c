@@ -25,11 +25,6 @@
 #include "qemu/main-loop.h"
 #include "hw/core/cpu.h"
 
-const CpusAccel qtest_cpus = {
-    .create_vcpu_thread = dummy_start_vcpu_thread,
-    .get_virtual_clock = qtest_get_virtual_clock,
-};
-
 static int qtest_init_accel(MachineState *ms)
 {
     return 0;
@@ -51,18 +46,26 @@ static const TypeInfo qtest_accel_type = {
     .class_init = qtest_accel_class_init,
 };
 
+static void qtest_cpus_class_init(ObjectClass *oc, void *data)
+{
+    CpusAccelOps *ops = CPUS_ACCEL_OPS_CLASS(oc);
+
+    ops->create_vcpu_thread = dummy_start_vcpu_thread;
+    ops->get_virtual_clock = qtest_get_virtual_clock;
+};
+
+static const TypeInfo qtest_cpus_type_info = {
+    .name = CPUS_ACCEL_TYPE_NAME("qtest"),
+
+    .parent = TYPE_CPUS_ACCEL_OPS,
+    .class_init = qtest_cpus_class_init,
+    .abstract = true,
+};
+
 static void qtest_type_init(void)
 {
     type_register_static(&qtest_accel_type);
+    type_register_static(&qtest_cpus_type_info);
 }
 
 type_init(qtest_type_init);
-
-static void qtest_accel_cpu_init(void)
-{
-    if (qtest_enabled()) {
-        cpus_register_accel(&qtest_cpus);
-    }
-}
-
-accel_cpu_init(qtest_accel_cpu_init);

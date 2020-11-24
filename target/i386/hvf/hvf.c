@@ -910,12 +910,3 @@ static void hvf_type_init(void)
 }
 
 type_init(hvf_type_init);
-
-static void hvf_accel_cpu_init(void)
-{
-    if (hvf_enabled()) {
-        cpus_register_accel(&hvf_cpus);
-    }
-}
-
-accel_cpu_init(hvf_accel_cpu_init);

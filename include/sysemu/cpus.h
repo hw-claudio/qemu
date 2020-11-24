@@ -1,14 +1,39 @@
+/*
+ * CPUS module (softmmu/cpus.c) Accelerator Ops
+ *
+ * Copyright 2020 SUSE LLC
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2 or later.
+ * See the COPYING file in the top-level directory.
+ *
+ */
+
 #ifndef QEMU_CPUS_H
 #define QEMU_CPUS_H
 
 #include "qemu/timer.h"
+#include "qom/object.h"
+
+/* accel/dummy-cpus.c */
+
+/* Create a dummy vcpu for CpusAccelOps->create_vcpu_thread */
+void dummy_start_vcpu_thread(CPUState *);
 
 /* cpus.c */
 
-/* CPU execution threads */
+#define TYPE_CPUS_ACCEL_OPS "accel-ops"
+#define CPUS_ACCEL_TYPE_NAME(name) (name "-" TYPE_CPUS_ACCEL_OPS)
 
-typedef struct CpusAccel {
-    void (*create_vcpu_thread)(CPUState *cpu); /* MANDATORY */
+typedef struct CpusAccelOps CpusAccelOps;
+DECLARE_CLASS_CHECKERS(CpusAccelOps, CPUS_ACCEL_OPS, TYPE_CPUS_ACCEL_OPS)
+
+struct CpusAccelOps {
+    ObjectClass parent_class;
+
+    /* initialization function called when accel is chosen */
+    void (*accel_chosen_init)(CpusAccelOps *ops);
+
+    void (*create_vcpu_thread)(CPUState *cpu); /* MANDATORY NON-NULL */
     void (*kick_vcpu_thread)(CPUState *cpu);
 
     void (*synchronize_post_reset)(CPUState *cpu);
@@ -20,13 +45,7 @@ typedef struct CpusAccel {
 
     int64_t (*get_virtual_clock)(void);
     int64_t (*get_elapsed_ticks)(void);
-} CpusAccel;
-
-/* register accel-specific cpus interface implementation */
-void cpus_register_accel(const CpusAccel *i);
-
-/* Create a dummy vcpu for CpusAccel->create_vcpu_thread */
-void dummy_start_vcpu_thread(CPUState *);
+};
 
 /* interface available for cpus accelerator threads */
 

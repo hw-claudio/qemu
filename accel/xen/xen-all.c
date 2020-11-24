@@ -154,10 +154,6 @@ static void xen_setup_post(MachineState *ms, AccelState *accel)
     }
 }
 
-const CpusAccel xen_cpus = {
-    .create_vcpu_thread = dummy_start_vcpu_thread,
-};
-
 static int xen_init(MachineState *ms)
 {
     MachineClass *mc = MACHINE_GET_CLASS(ms);
@@ -219,18 +215,23 @@ static const TypeInfo xen_accel_type = {
     .class_init = xen_accel_class_init,
 };
 
+static void xen_cpus_class_init(ObjectClass *oc, void *data)
+{
+    CpusAccelOps *ops = CPUS_ACCEL_OPS_CLASS(oc);
+
+    ops->create_vcpu_thread = dummy_start_vcpu_thread;
+};
+static const TypeInfo xen_cpus_type_info = {
+    .name = CPUS_ACCEL_TYPE_NAME("xen"),
+
+    .parent = TYPE_CPUS_ACCEL_OPS,
+    .class_init = xen_cpus_class_init,
+    .abstract = true,
+};
+
 static void xen_type_init(void)
 {
     type_register_static(&xen_accel_type);
+    type_register_static(&xen_cpus_type_info);
 }
-
 type_init(xen_type_init);
-
-static void xen_accel_cpu_init(void)
-{
-    if (xen_enabled()) {
-        cpus_register_accel(&xen_cpus);
-    }
-}
-
-accel_cpu_init(xen_accel_cpu_init);
