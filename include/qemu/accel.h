@@ -69,7 +69,7 @@ typedef struct AccelClass {
 AccelClass *accel_find(const char *opt_name);
 AccelState *current_accel(void);
 
-void accel_init_interfaces(AccelClass *ac, const char *cpu_type);
+void accel_init_interfaces(AccelClass *ac);
 
 #ifndef CONFIG_USER_ONLY
 int accel_init_machine(AccelState *accel, MachineState *ms);

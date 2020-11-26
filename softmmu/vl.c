@@ -4321,10 +4321,12 @@ void qemu_init(int argc, char **argv, char **envp)
     if (cpu_option) {
         current_machine->cpu_type = parse_cpu_option(cpu_option);
     }
-
-    /* cpu has been chosen, initialize the accel interfaces */
-    accel_init_interfaces(ACCEL_GET_CLASS(current_machine->accelerator),
-                          current_machine->cpu_type);
+    /*
+     * warning: regardless of the code above,
+     * current_machine->cpu_type can still be NULL at this point,
+     * as machine "none" has no machine_class->default_cpu_type (NULL).
+     */
+    accel_init_interfaces(ACCEL_GET_CLASS(current_machine->accelerator));
 
     if (current_machine->ram_memdev_id) {
         Object *backend;

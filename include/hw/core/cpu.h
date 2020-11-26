@@ -76,6 +76,8 @@ typedef struct CPUWatchpoint CPUWatchpoint;
 
 struct TranslationBlock;
 
+struct AccelCPUClass;
+
 /**
  * CPUClass:
  * @class_by_name: Callback to map -cpu command line model name to an
@@ -227,6 +229,8 @@ struct CPUClass {
     /* Keep non-pointer data at the end to minimize holes.  */
     int gdb_num_core_regs;
     bool gdb_stop_before_watchpoint;
+
+    struct AccelCPUClass *accel_cpu_interface;
 };
 
 /*
