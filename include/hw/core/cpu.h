@@ -76,6 +76,9 @@ typedef struct CPUWatchpoint CPUWatchpoint;
 
 struct TranslationBlock;
 
+/* see accel-cpu.h */
+struct AccelCPUClass;
+
 #ifdef CONFIG_TCG
 /**
  * struct TcgCpuOperations: TCG operations specific to a CPU class
@@ -119,6 +122,14 @@ typedef struct TcgCpuOperations {
     /** @debug_excp_handler: Callback for handling debug exceptions */
     void (*debug_excp_handler)(CPUState *cpu);
 
+    /*
+     * NB(1): make sure that these CONFIG_SOFTMMU only fields are last,
+     * until things are reworked in a later patch.
+     * This is extra caution to avoid situations where objects built from
+     * common_ss and specific_ss see different incompatible views of the
+     * structure, and attempt to access unconditional fields at different
+     * addresses.
+     */
 #ifdef NEED_CPU_H
 #ifdef CONFIG_SOFTMMU
     /**
@@ -261,7 +272,12 @@ struct CPUClass {
     /* Keep non-pointer data at the end to minimize holes.  */
     int gdb_num_core_regs;
     bool gdb_stop_before_watchpoint;
+    struct AccelCPUClass *accel_cpu;
 
+    /*
+     * see NB(1) above: this field should be last
+     * (until things are reworked in a later patch)
+     */
 #ifdef CONFIG_TCG
     TcgCpuOperations tcg_ops;
 #endif /* CONFIG_TCG */
