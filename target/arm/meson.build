@@ -26,7 +26,6 @@ arm_ss.add(files(
   'op_helper.c',
   'tlb_helper.c',
   'translate.c',
-  'vec_helper.c',
   'vfp_helper.c',
 ))
 arm_ss.add(zlib)
