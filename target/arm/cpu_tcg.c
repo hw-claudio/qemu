@@ -625,7 +625,7 @@ static void arm_v7m_class_init(ObjectClass *oc, void *data)
 
     acc->info = data;
 #ifndef CONFIG_USER_ONLY
-    cc->do_interrupt = arm_v7m_cpu_do_interrupt;
+    cc->tcg_ops.do_interrupt = arm_v7m_cpu_do_interrupt;
 #endif
 
 #ifdef CONFIG_TCG
