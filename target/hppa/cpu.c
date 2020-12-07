@@ -149,9 +149,9 @@ static void hppa_cpu_class_init(ObjectClass *oc, void *data)
     cc->tcg_ops.tlb_fill = hppa_cpu_tlb_fill;
 #ifndef CONFIG_USER_ONLY
     cc->get_phys_page_debug = hppa_cpu_get_phys_page_debug;
+    cc->tcg_ops.do_unaligned_access = hppa_cpu_do_unaligned_access;
     dc->vmsd = &vmstate_hppa_cpu;
 #endif
-    cc->do_unaligned_access = hppa_cpu_do_unaligned_access;
     cc->disas_set_info = hppa_cpu_disas_set_info;
     cc->tcg_ops.initialize = hppa_translate_init;
 
