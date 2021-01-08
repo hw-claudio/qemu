@@ -122,19 +122,24 @@ static void tcg_cpu_realizefn(CPUState *cs, Error **errp)
 
 #endif /* !CONFIG_USER_ONLY */
 
+#include "hw/core/tcg-cpu-ops.h"
+
+static struct TCGCPUOps x86_tcg_ops = {
+    .initialize = tcg_x86_init,
+    .synchronize_from_tb = x86_cpu_synchronize_from_tb,
+    .cpu_exec_enter = x86_cpu_exec_enter,
+    .cpu_exec_exit = x86_cpu_exec_exit,
+    .cpu_exec_interrupt = x86_cpu_exec_interrupt,
+    .do_interrupt = x86_cpu_do_interrupt,
+    .tlb_fill = x86_cpu_tlb_fill,
+#ifndef CONFIG_USER_ONLY
+    .debug_excp_handler = breakpoint_handler,
+#endif /* !CONFIG_USER_ONLY */
+};
 
 static void tcg_cpu_class_init(CPUClass *cc)
 {
-    cc->tcg_ops.do_interrupt = x86_cpu_do_interrupt;
-    cc->tcg_ops.cpu_exec_interrupt = x86_cpu_exec_interrupt;
-    cc->tcg_ops.synchronize_from_tb = x86_cpu_synchronize_from_tb;
-    cc->tcg_ops.cpu_exec_enter = x86_cpu_exec_enter;
-    cc->tcg_ops.cpu_exec_exit = x86_cpu_exec_exit;
-    cc->tcg_ops.initialize = tcg_x86_init;
-    cc->tcg_ops.tlb_fill = x86_cpu_tlb_fill;
-#ifndef CONFIG_USER_ONLY
-    cc->tcg_ops.debug_excp_handler = breakpoint_handler;
-#endif /* !CONFIG_USER_ONLY */
+    cc->tcg_ops = &x86_tcg_ops;
 }
 
 /*
