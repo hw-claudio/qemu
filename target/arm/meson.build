@@ -2,7 +2,6 @@ arm_ss = ss.source_set()
 arm_ss.add(files(
   'cpu.c',
   'gdbstub.c',
-  'cpu_tcg.c',
   'cpu-mmu.c',
   'cpregs.c',
   'cpustate-list.c',
@@ -20,7 +19,6 @@ arm_ss.add(when: 'TARGET_AARCH64', if_true: files(
 
 arm_ss.add(when: 'CONFIG_TCG', if_true: files(
   'cpu32.c',
-  'cpu_tcg.c',
 ))
 
 arm_softmmu_ss = ss.source_set()
