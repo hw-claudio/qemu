@@ -20,8 +20,10 @@
 
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "qapi/error.h"
 #include "tcg-cpu.h"
 #include "hw/core/tcg-cpu-ops.h"
+#include "hw/core/accel-cpu.h"
 #include "cpregs.h"
 #include "internals.h"
 #include "exec/exec-all.h"
@@ -227,3 +229,44 @@ struct TCGCPUOps arm_tcg_ops = {
     .debug_check_watchpoint = arm_debug_check_watchpoint,
 #endif /* !CONFIG_USER_ONLY */
 };
+
+static void tcg_cpu_class_init(CPUClass *cc)
+{
+    cc->tcg_ops = &arm_tcg_ops;
+}
+
+static void tcg_cpu_instance_init(CPUState *cs)
+{
+    ARMCPU *cpu = ARM_CPU(cs);
+
+    /*
+     * this would be the place to move TCG-specific props
+     * in future refactoring of cpu properties.
+     */
+
+    cpu->psci_version = 2; /* TCG implements PSCI 0.2 */
+}
+
+static void tcg_cpu_accel_class_init(ObjectClass *oc, void *data)
+{
+    AccelCPUClass *acc = ACCEL_CPU_CLASS(oc);
+
+#ifndef CONFIG_USER_ONLY
+    acc->cpu_realizefn = tcg_cpu_realizefn;
+#endif /* CONFIG_USER_ONLY */
+
+    acc->cpu_class_init = tcg_cpu_class_init;
+    acc->cpu_instance_init = tcg_cpu_instance_init;
+}
+static const TypeInfo tcg_cpu_accel_type_info = {
+    .name = ACCEL_CPU_NAME("tcg"),
+
+    .parent = TYPE_ACCEL_CPU,
+    .class_init = tcg_cpu_accel_class_init,
+    .abstract = true,
+};
+static void tcg_cpu_accel_register_types(void)
+{
+    type_register_static(&tcg_cpu_accel_type_info);
+}
+type_init(tcg_cpu_accel_register_types);

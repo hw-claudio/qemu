@@ -582,10 +582,6 @@ static void arm_cpu_initfn(Object *obj)
     cpu->psci_version = 1; /* By default assume PSCI v0.1 */
     cpu->kvm_target = QEMU_KVM_ARM_TARGET_NONE;
 
-    if (tcg_enabled()) {
-        cpu->psci_version = 2; /* TCG implements PSCI 0.2 */
-    }
-
     /* if required, do accelerator-specific cpu initializations */
     accel_cpu_instance_init(CPU(obj));
 }
@@ -873,34 +869,7 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
     Error *local_err = NULL;
     bool no_aa32 = false;
 
-    /*
-     * If we needed to query the host kernel for the CPU features
-     * then it's possible that might have failed in the initfn, but
-     * this is the first point where we can report it.
-     */
-    if (cpu->host_cpu_probe_failed) {
-        error_setg(errp, "The 'host' CPU type can only be used with KVM");
-        return;
-    }
-
-#ifndef CONFIG_USER_ONLY
-    /* The NVIC and M-profile CPU are two halves of a single piece of
-     * hardware; trying to use one without the other is a command line
-     * error and will result in segfaults if not caught here.
-     */
-    if (arm_feature(env, ARM_FEATURE_M)) {
-        if (!env->nvic) {
-            error_setg(errp, "This board cannot be used with Cortex-M CPUs");
-            return;
-        }
-    } else {
-        if (env->nvic) {
-            error_setg(errp, "This board can only be used with Cortex-M CPUs");
-            return;
-        }
-    }
-
-#ifdef CONFIG_TCG
+#if defined(CONFIG_TCG) && !defined(CONFIG_USER_ONLY)
     {
         uint64_t scale;
 
@@ -926,8 +895,7 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
         cpu->gt_timer[GTIMER_HYPVIRT] = timer_new(QEMU_CLOCK_VIRTUAL, scale,
                                                   arm_gt_hvtimer_cb, cpu);
     }
-#endif /* CONFIG_TCG */
-#endif /* !CONFIG_USER_ONLY */
+#endif /* CONFIG_TCG && !CONFIG_USER_ONLY */
 
     cpu_exec_realizefn(cs, &local_err);
     if (local_err != NULL) {
@@ -1461,10 +1429,6 @@ static void arm_cpu_class_init(ObjectClass *oc, void *data)
     cc->gdb_get_dynamic_xml = arm_gdb_get_dynamic_xml;
     cc->gdb_stop_before_watchpoint = true;
     cc->disas_set_info = arm_disas_set_info;
-
-#ifdef CONFIG_TCG
-    cc->tcg_ops = &arm_tcg_ops;
-#endif /* CONFIG_TCG */
 
     arm32_cpu_class_init(oc, data);
 }
