@@ -32,6 +32,7 @@ extern struct TCGCPUOps arm_tcg_ops;
 /* Do semihosting call and set the appropriate return value. */
 void tcg_handle_semihosting(CPUState *cs);
 bool tcg_cpu_realizefn(CPUState *cs, Error **errp);
+bool tcg_cpu_realize_gt_timers(CPUState *cs, Error **errp);
 
 #endif /* !CONFIG_USER_ONLY */
 
