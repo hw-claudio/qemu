@@ -1,6 +1,7 @@
 
 s390x_ss.add(when: 'CONFIG_KVM', if_true: files(
-  'kvm.c'
+  'kvm.c',
+  'kvm-cpu.c',
 ), if_false: files('kvm-stub.c'))
 
 # Newer kernels on s390 check for an S390_PGSTE program header and
