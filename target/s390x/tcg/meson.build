@@ -11,4 +11,5 @@ s390x_ss.add(when: 'CONFIG_TCG', if_true: files(
   'vec_helper.c',
   'vec_int_helper.c',
   'vec_string_helper.c',
+  'tcg-cpu.c',
 ))
